@@ -1,0 +1,172 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 Intel Corporation
+
+@startuml
+'https://plantuml.com/class-diagram
+
+hide empty methods
+
+package ClusterConfig <<rectangle>> #DDDDDD {
+
+    class SriovFecClusterConfigList{
+        metav1.TypeMeta
+        metav1.ListMeta
+        Items []SriovFecClusterConfig
+    }
+
+    class SriovFecClusterConfig{
+        metav1.TypeMeta
+        metav1.ObjectMeta
+
+        Spec   SriovFecClusterConfigSpec
+        Status SriovFecClusterConfigStatus
+    }
+
+    class SriovFecClusterConfigSpec {
+        NodeSelector map[string]string
+
+        AcceleratorSelector SriovAcceleratorSelector
+
+        PhysicalFunction PhysicalFunctionConfig
+
+        // Higher priority policies can override lower ones.
+        Priority int
+
+        DrainSkip bool
+    }
+
+    class SriovAcceleratorSelector {
+        VendorID string
+        DeviceID string
+        PCIAddress string
+        Driver string
+        MaxVFs int
+    }
+
+    class SriovFecClusterConfigStatus {
+        SyncStatus SyncStatus
+        LastSyncError string
+    }
+
+    enum SyncStatus {
+        InProgress
+        Succeeded
+        Ignored
+        Failed
+    }
+}
+
+package NodeConfig <<rectangle>> #DDDDDD {
+
+    class SriovFecNodeConfigList {
+        metav1.TypeMeta
+        metav1.ListMeta
+        Items []SriovFecNodeConfig
+    }
+
+    class SriovFecNodeConfig  {
+        metav1.TypeMeta
+        metav1.ObjectMeta
+        Spec   SriovFecNodeConfigSpec
+        Status SriovFecNodeConfigStatus
+    }
+
+    class SriovFecNodeConfigStatus {
+        Conditions []metav1.Condition
+        Inventory NodeInventory
+    }
+
+    class NodeInventory {
+        SriovAccelerators []SriovAccelerator
+    }
+
+    class SriovAccelerator {
+        VendorID string
+        DeviceID string
+        PCIAddress string
+        Driver string
+        MaxVFs int
+        VFs []VF
+    }
+
+    class VF {
+        PCIAddress string
+        Driver string
+        DeviceID string
+    }
+
+    class SriovFecNodeConfigSpec {
+        PhysicalFunctions []PhysicalFunctionExtConfig
+        DrainSkip bool
+    }
+
+    class PhysicalFunctionExtConfig {
+        PCIAddress string
+    }
+}
+
+package common <<rectangle>> {
+    class PhysicalFunctionConfig {
+        PFDriver string
+        VFDriver string
+        VFAmount int
+        BBDevConfig BBDevConfig
+    }
+
+    class BBDevConfig {
+        ACC100 *ACC100BBDevConfig
+        ACC200 *ACC200BBDevConfig
+    }
+
+    class ACC100BBDevConfig {
+        PFMode bool
+        NumVfBundles int
+        MaxQueueSize int
+        Uplink4G     QueueGroupConfig
+        Downlink4G   QueueGroupConfig
+        Uplink5G     QueueGroupConfig
+        Downlink5G   QueueGroupConfig
+    }
+
+    class ACC200BBDevConfig {
+        PFMode bool
+        NumVfBundles int
+        MaxQueueSize int
+        Uplink4G     QueueGroupConfig
+        Downlink4G   QueueGroupConfig
+        Uplink5G     QueueGroupConfig
+        Downlink5G   QueueGroupConfig
+        QFFT         QueueGroupConfig
+    }
+
+    class QueueGroupConfig {
+        NumQueueGroups
+        NumAqsPerGroups
+        AqDepthLog2 int
+    }
+}
+
+
+
+PhysicalFunctionConfig --> BBDevConfig
+BBDevConfig --> ACC100BBDevConfig
+BBDevConfig --> ACC200BBDevConfig
+ACC100BBDevConfig -- QueueGroupConfig
+ACC200BBDevConfig -- QueueGroupConfig
+PhysicalFunctionConfig <|---- PhysicalFunctionExtConfig
+PhysicalFunctionConfig <--- SriovFecClusterConfigSpec
+SriovFecClusterConfigSpec --> SriovAcceleratorSelector
+SriovFecClusterConfigList *-- SriovFecClusterConfig
+SriovFecClusterConfig --> SriovFecClusterConfigStatus
+SriovFecClusterConfig --> SriovFecClusterConfigSpec
+SriovFecClusterConfigStatus --> SyncStatus
+SriovAccelerator *-- VF
+SriovFecNodeConfigList *-- SriovFecNodeConfig
+SriovFecNodeConfig --> SriovFecNodeConfigStatus
+SriovFecNodeConfig --> SriovFecNodeConfigSpec
+SriovFecNodeConfigStatus --> NodeInventory
+NodeInventory *-- SriovAccelerator
+SriovFecNodeConfigSpec *-- PhysicalFunctionExtConfig
+
+
+@enduml

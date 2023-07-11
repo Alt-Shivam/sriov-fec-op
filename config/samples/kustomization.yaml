@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2020 Intel Corporation
+
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- sriovfec_v2_sriovfecclusterconfig_n3000.yaml
+- sriovfec_v2_sriovfecclusterconfig_acc100.yaml
+- sriovfec_v2_sriovfecnodeconfig_n3000.yaml
+- sriovfec_v2_sriovfecnodeconfig_acc100.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
